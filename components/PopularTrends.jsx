@@ -4,9 +4,18 @@ import { Alert, Avatar, Flex, Typography } from "antd";
 import { mockTrends } from "@/mock/mockTrends";
 import Iconify from "./Iconify";
 import { getPopularTrends } from "@/actions/post";
-import { QueryClient, useQuery } from "@tanstack/react-query";
+import { QueryClient } from "@tanstack/react-query";
+import dynamic from "next/dynamic";
+
+// Importar SearchButton de forma dinámica para evitar problemas de hidratación
+const SearchButton = dynamic(() => import("./SearchButton"), {
+  ssr: false,
+  loading: () => null,
+});
+
 const PopularTrends = async () => {
   const queryClient = new QueryClient();
+
   try {
     const { data } = await queryClient.fetchQuery({
       queryKey: ["trends"],
@@ -14,9 +23,12 @@ const PopularTrends = async () => {
       // stale time is 1 day
       staleTime: 1000 * 60 * 60 * 24,
     });
+
     return (
       <div className={css.wrapper}>
         <div className={css.bg} />
+        <SearchButton />
+
         {/* head */}
         <div className={css.container}>
           <Flex vertical>

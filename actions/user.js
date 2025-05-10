@@ -268,3 +268,44 @@ export const updateInfluencerStatus = async (params) => {
     throw e;
   }
 };
+
+export const searchUsers = async ({ query, type = "all" }) => {
+  try {
+    const where = {
+      OR: [
+        { first_name: { contains: query, mode: "insensitive" } },
+        { last_name: { contains: query, mode: "insensitive" } },
+        { email_address: { contains: query, mode: "insensitive" } },
+        { username: { contains: query, mode: "insensitive" } },
+        { bio: { contains: query, mode: "insensitive" } }
+      ]
+    };
+
+    // Agregar filtro por tipo si no es "all"
+    if (type === "influencer") {
+      where.isInfluencer = true;
+    } else if (type === "company") {
+      where.isInfluencer = false;
+    }
+
+    const users = await db.user.findMany({
+      where,
+      select: {
+        id: true,
+        first_name: true,
+        last_name: true,
+        email_address: true,
+        image_url: true,
+        username: true,
+        bio: true,
+        isInfluencer: true,
+      },
+      take: 10,
+    });
+
+    return { data: users };
+  } catch (error) {
+    console.error("Error searching users:", error);
+    throw error;
+  }
+};
