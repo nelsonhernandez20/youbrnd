@@ -80,6 +80,7 @@ export const getUser = async (id) => {
         banner_url: true,
         banner_id: true,
         bio: true,
+        isInfluencer: true,
       },
     });
     return { data: user };
@@ -246,6 +247,24 @@ export const updateBio = async (params) => {
     console.log("user bio updated");
   } catch (e) {
     console.log("Error updating user bio");
+    throw e;
+  }
+};
+
+export const updateInfluencerStatus = async (params) => {
+  const { id, isInfluencer } = params;
+  try {
+    await db.user.update({
+      where: {
+        id,
+      },
+      data: {
+        isInfluencer,
+      },
+    });
+    console.log("user influencer status updated");
+  } catch (e) {
+    console.log("Error updating user influencer status");
     throw e;
   }
 };

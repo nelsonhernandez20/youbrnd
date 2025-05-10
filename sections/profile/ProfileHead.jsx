@@ -1,13 +1,13 @@
 "use client";
 import React, { useEffect, useRef, useState } from "react";
 import css from "@/styles/ProfileHead.module.css";
-import { Button, Flex, Image, Skeleton, Spin, Tabs, Input } from "antd";
+import { Button, Flex, Image, Skeleton, Spin, Tabs, Input, Switch } from "antd";
 import Box from "@/components/Box";
 import { Typography } from "antd";
 import { Icon } from "@iconify/react";
 import { useUser } from "@clerk/nextjs";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { getUser, updateBanner, updateBio } from "@/actions/user";
+import { getUser, updateBanner, updateBio, updateInfluencerStatus } from "@/actions/user";
 import toast from "react-hot-toast";
 const { Text } = Typography;
 const TABS = [
@@ -60,6 +60,17 @@ const ProfileHead = ({
     },
   });
 
+  const { mutate: updateInfluencerMutation, isPending: isUpdatingInfluencer } = useMutation({
+    mutationFn: updateInfluencerStatus,
+    onSuccess: () => {
+      toast.success("Profile type updated successfully!");
+      queryClient.invalidateQueries(["user", userId]);
+    },
+    onError: () => {
+      toast.error("Something wrong happened. Try again!");
+    },
+  });
+
   useEffect(() => {
     if (data?.data?.banner_url) {
       setBanner(data?.data?.banner_url);
@@ -100,7 +111,7 @@ const ProfileHead = ({
 
   return (
     <div className={css.container}>
-      <Spin spinning={isPending || isUpdatingBio}>
+      <Spin spinning={isPending || isUpdatingBio || isUpdatingInfluencer}>
         <div className={css.banner} onClick={() => setBannerPreview(true)}>
           <Image
             src={banner || "/images/banner.png"}
@@ -166,6 +177,22 @@ const ProfileHead = ({
                     <Text className={"typoBody1"} type="secondary">
                       @{data?.data?.username}
                     </Text>
+                    {userId === user?.id && (
+                      <div style={{ marginTop: "0.5rem", display: "flex", alignItems: "center", gap: "0.5rem" }}>
+                        <Switch
+                          checked={data?.data?.isInfluencer}
+                          onChange={(checked) => {
+                            updateInfluencerMutation({
+                              id: user?.id,
+                              isInfluencer: checked,
+                            });
+                          }}
+                        />
+                        <Text className={"typoBody2"}>
+                          {data?.data?.isInfluencer ? "Influencer Account" : "company Account"}
+                        </Text>
+                      </div>
+                    )}
                     {userId === user?.id ? (
                       <div style={{ marginTop: "0.1rem" }}>
                         <Input.TextArea
