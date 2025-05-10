@@ -108,7 +108,6 @@ const ProfileHead = ({
   };
 
   if (isError) return <div>Error</div>;
-
   return (
     <div className={css.container}>
       <Spin spinning={isPending || isUpdatingBio || isUpdatingInfluencer}>
@@ -177,6 +176,22 @@ const ProfileHead = ({
                     <Text className={"typoBody1"} type="secondary">
                       @{data?.data?.username}
                     </Text>
+                    {/* Mostrar tags si existen */}
+                    {Array.isArray(data?.data?.tags) && data.data.tags.length > 0 && (
+                      <div style={{ margin: "0.5rem 0", display: "flex", flexWrap: "wrap", gap: "0.5rem" }}>
+                        {data.data.tags.map((tag, idx) => (
+                          <span key={idx} style={{
+                            background: "#f0f0f0",
+                            color: "#333",
+                            borderRadius: "1rem",
+                            padding: "0.2rem 0.8rem",
+                            fontSize: 13,
+                            fontWeight: 500,
+                            display: "inline-block"
+                          }}>{tag}</span>
+                        ))}
+                      </div>
+                    )}
                     {userId === user?.id && (
                       <div style={{ marginTop: "0.5rem", display: "flex", alignItems: "center", gap: "0.5rem" }}>
                         <Switch

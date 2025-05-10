@@ -81,6 +81,7 @@ export const getUser = async (id) => {
         banner_id: true,
         bio: true,
         isInfluencer: true,
+        tags: true,
       },
     });
     return { data: user };
@@ -277,7 +278,8 @@ export const searchUsers = async ({ query, type = "all" }) => {
         { last_name: { contains: query, mode: "insensitive" } },
         { email_address: { contains: query, mode: "insensitive" } },
         { username: { contains: query, mode: "insensitive" } },
-        { bio: { contains: query, mode: "insensitive" } }
+        { bio: { contains: query, mode: "insensitive" } },
+        { tags: { has: query } }
       ]
     };
 
@@ -299,6 +301,7 @@ export const searchUsers = async ({ query, type = "all" }) => {
         username: true,
         bio: true,
         isInfluencer: true,
+        tags: true,
       },
       take: 10,
     });

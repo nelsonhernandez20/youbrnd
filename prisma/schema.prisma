@@ -51,6 +51,7 @@ model User {
     banner_id     String?
     username      String?   @unique
     isInfluencer  Boolean   @default(false)
+    tags          String[]  @default([])
     posts         Post[]
     likes         Like[]
     comments      Comment[]
