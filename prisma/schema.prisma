@@ -45,6 +45,7 @@ model User {
     email_address String?   @unique
     first_name    String?
     last_name     String?
+    bio           String?   @db.Text
     image_url     String?
     banner_url    String?
     banner_id     String?

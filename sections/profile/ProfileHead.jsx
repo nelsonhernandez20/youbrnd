@@ -1,13 +1,13 @@
 "use client";
 import React, { useEffect, useRef, useState } from "react";
 import css from "@/styles/ProfileHead.module.css";
-import { Button, Flex, Image, Skeleton, Spin, Tabs } from "antd";
+import { Button, Flex, Image, Skeleton, Spin, Tabs, Input } from "antd";
 import Box from "@/components/Box";
 import { Typography } from "antd";
 import { Icon } from "@iconify/react";
 import { useUser } from "@clerk/nextjs";
-import { useMutation, useQuery } from "@tanstack/react-query";
-import { getUser, updateBanner } from "@/actions/user";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { getUser, updateBanner, updateBio } from "@/actions/user";
 import toast from "react-hot-toast";
 const { Text } = Typography;
 const TABS = [
@@ -36,6 +36,8 @@ const ProfileHead = ({
   const { user } = useUser();
   const inputRef = useRef(null);
   const [banner, setBanner] = useState(null);
+  const [bioText, setBioText] = useState("");
+  const queryClient = useQueryClient();
 
   const { mutate, isPending } = useMutation({
     mutationFn: updateBanner,
@@ -47,11 +49,28 @@ const ProfileHead = ({
     },
   });
 
+  const { mutate: updateBioMutation, isPending: isUpdatingBio } = useMutation({
+    mutationFn: updateBio,
+    onSuccess: () => {
+      toast.success("Bio updated successfully!");
+      queryClient.invalidateQueries(["user", userId]);
+    },
+    onError: () => {
+      toast.error("Something wrong happened. Try again!");
+    },
+  });
+
   useEffect(() => {
     if (data?.data?.banner_url) {
       setBanner(data?.data?.banner_url);
     }
   }, [data, setBanner]);
+
+  useEffect(() => {
+    if (data?.data?.bio) {
+      setBioText(data.data.bio);
+    }
+  }, [data?.data?.bio]);
 
   const handleBannerChange = async (e) => {
     const file = e.target.files[0];
@@ -81,7 +100,7 @@ const ProfileHead = ({
 
   return (
     <div className={css.container}>
-      <Spin spinning={isPending}>
+      <Spin spinning={isPending || isUpdatingBio}>
         <div className={css.banner} onClick={() => setBannerPreview(true)}>
           <Image
             src={banner || "/images/banner.png"}
@@ -147,6 +166,36 @@ const ProfileHead = ({
                     <Text className={"typoBody1"} type="secondary">
                       @{data?.data?.username}
                     </Text>
+                    {userId === user?.id ? (
+                      <div style={{ marginTop: "0.1rem" }}>
+                        <Input.TextArea
+                          placeholder="Write something about yourself..."
+                          value={bioText}
+                          onChange={(e) => setBioText(e.target.value)}
+                          style={{ resize: "none" }}
+                          rows={3}
+                        />
+                        <Button
+                          type="primary"
+                          onClick={() => {
+                            updateBioMutation({
+                              id: user?.id,
+                              bio: bioText,
+                            });
+                          }}
+                          style={{ marginTop: "0.5rem" }}
+                          loading={isUpdatingBio}
+                        >
+                          Update Bio
+                        </Button>
+                      </div>
+                    ) : (
+                      data?.data?.bio && (
+                        <Text className={"typoBody1"} style={{ marginTop: "0.5rem" }}>
+                          {data?.data?.bio}
+                        </Text>
+                      )
+                    )}
                   </>
                 ) : (
                   <Skeleton style={{ width: "9rem" }} paragraph={{ rows: 2 }} />

@@ -79,6 +79,7 @@ export const getUser = async (id) => {
         username: true,
         banner_url: true,
         banner_id: true,
+        bio: true,
       },
     });
     return { data: user };
@@ -227,6 +228,24 @@ export const getFollowSuggestions = async () => {
     return suggestions;
   } catch (e) {
     console.log(e);
+    throw e;
+  }
+};
+
+export const updateBio = async (params) => {
+  const { id, bio } = params;
+  try {
+    await db.user.update({
+      where: {
+        id,
+      },
+      data: {
+        bio,
+      },
+    });
+    console.log("user bio updated");
+  } catch (e) {
+    console.log("Error updating user bio");
     throw e;
   }
 };
