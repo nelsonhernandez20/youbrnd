@@ -79,6 +79,9 @@ export const getUser = async (id) => {
         username: true,
         banner_url: true,
         banner_id: true,
+        bio: true,
+        isInfluencer: true,
+        tags: true,
       },
     });
     return { data: user };
@@ -228,5 +231,84 @@ export const getFollowSuggestions = async () => {
   } catch (e) {
     console.log(e);
     throw e;
+  }
+};
+
+export const updateBio = async (params) => {
+  const { id, bio } = params;
+  try {
+    await db.user.update({
+      where: {
+        id,
+      },
+      data: {
+        bio,
+      },
+    });
+    console.log("user bio updated");
+  } catch (e) {
+    console.log("Error updating user bio");
+    throw e;
+  }
+};
+
+export const updateInfluencerStatus = async (params) => {
+  const { id, isInfluencer } = params;
+  try {
+    await db.user.update({
+      where: {
+        id,
+      },
+      data: {
+        isInfluencer,
+      },
+    });
+    console.log("user influencer status updated");
+  } catch (e) {
+    console.log("Error updating user influencer status");
+    throw e;
+  }
+};
+
+export const searchUsers = async ({ query, type = "all" }) => {
+  try {
+    const where = {
+      OR: [
+        { first_name: { contains: query, mode: "insensitive" } },
+        { last_name: { contains: query, mode: "insensitive" } },
+        { email_address: { contains: query, mode: "insensitive" } },
+        { username: { contains: query, mode: "insensitive" } },
+        { bio: { contains: query, mode: "insensitive" } },
+        { tags: { has: query } }
+      ]
+    };
+
+    // Agregar filtro por tipo si no es "all"
+    if (type === "influencer") {
+      where.isInfluencer = true;
+    } else if (type === "company") {
+      where.isInfluencer = false;
+    }
+
+    const users = await db.user.findMany({
+      where,
+      select: {
+        id: true,
+        first_name: true,
+        last_name: true,
+        email_address: true,
+        image_url: true,
+        username: true,
+        bio: true,
+        isInfluencer: true,
+        tags: true,
+      },
+      take: 10,
+    });
+
+    return { data: users };
+  } catch (error) {
+    console.error("Error searching users:", error);
+    throw error;
   }
 };
