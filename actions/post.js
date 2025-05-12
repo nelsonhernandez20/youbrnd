@@ -7,7 +7,7 @@ import { checkPostForTrends } from "@/utils";
 import { getAllFollowersAndFollowings } from "./user";
 
 export const createPost = async (post) => {
-  const { postText, media } = post;
+  const { postText, media, isPublic = true } = post;
   try {
     let cld_id;
     let assetUrl;
@@ -23,6 +23,7 @@ export const createPost = async (post) => {
         postText,
         media: assetUrl,
         cld_id,
+        isPublic,
         author: {
           connect: {
             id: user?.id,
@@ -47,9 +48,119 @@ export const createPost = async (post) => {
 
 export const getPosts = async (lastCursor, id) => {
   try {
-    // const { id: userId } = await currentUser();
+    const user = await currentUser();
+    const currentUserId = user?.id;
     const take = 5;
-    const where = id !== "all" ? { author: { id } } : {};
+
+    // Si no hay usuario logueado, solo mostrar posts públicos
+    if (!currentUserId) {
+      const where = { authorId: id, isPublic: true };
+      const posts = await db.post.findMany({
+        include: {
+          author: true,
+          likes: true,
+          comments: {
+            include: {
+              author: true,
+            },
+          },
+        },
+        where,
+        take,
+        ...(lastCursor && {
+          skip: 1,
+          cursor: {
+            id: lastCursor,
+          },
+        }),
+        orderBy: {
+          createdAt: "desc",
+        },
+      });
+
+      if (posts.length === 0) {
+        return {
+          data: [],
+          metaData: {
+            lastCursor: null,
+            hasMore: false,
+          },
+        };
+      }
+
+      const lastPostInResults = posts[posts.length - 1];
+      const cursor = lastPostInResults?.id;
+
+      return {
+        data: posts,
+        metaData: {
+          lastCursor: cursor,
+          hasMore: false,
+        },
+      };
+    }
+
+    // Si es el perfil del usuario actual, mostrar todos sus posts
+    if (id === currentUserId) {
+      const where = { authorId: id };
+      const posts = await db.post.findMany({
+        include: {
+          author: true,
+          likes: true,
+          comments: {
+            include: {
+              author: true,
+            },
+          },
+        },
+        where,
+        take,
+        ...(lastCursor && {
+          skip: 1,
+          cursor: {
+            id: lastCursor,
+          },
+        }),
+        orderBy: {
+          createdAt: "desc",
+        },
+      });
+
+      if (posts.length === 0) {
+        return {
+          data: [],
+          metaData: {
+            lastCursor: null,
+            hasMore: false,
+          },
+        };
+      }
+
+      const lastPostInResults = posts[posts.length - 1];
+      const cursor = lastPostInResults?.id;
+
+      return {
+        data: posts,
+        metaData: {
+          lastCursor: cursor,
+          hasMore: posts.length > 0,
+        },
+      };
+    }
+
+    // Si es el perfil de otro usuario, mostrar solo posts públicos o si hay relación de seguimiento
+    const { followers, following } = await getAllFollowersAndFollowings(currentUserId);
+    const followingIds = following.map((f) => f.followingId);
+    const followerIds = followers.map((f) => f.followerId);
+    const hasRelationship = followingIds.includes(id) || followerIds.includes(id);
+
+    let where;
+    if (hasRelationship) {
+      where = { authorId: id };
+    } else {
+      where = { authorId: id, isPublic: true };
+    }
+
     const posts = await db.post.findMany({
       include: {
         author: true,
@@ -82,22 +193,15 @@ export const getPosts = async (lastCursor, id) => {
         },
       };
     }
+
     const lastPostInResults = posts[posts.length - 1];
     const cursor = lastPostInResults?.id;
 
-    const morePosts = await db.post.findMany({
-      where,
-      take,
-      skip: 1,
-      cursor: {
-        id: cursor,
-      },
-    });
     return {
       data: posts,
       metaData: {
         lastCursor: cursor,
-        hasMore: morePosts.length > 0,
+        hasMore: posts.length > 0,
       },
     };
   } catch (e) {
@@ -117,7 +221,13 @@ export const getMyPostsFeed = async (lastCursor) => {
     const userIds = [...new Set([...followingIds, ...followerIds, id])];
 
     const take = 5;
-    const where = { author: { id: { in: userIds } } };
+    const where = {
+      OR: [
+        { author: { id: { in: userIds } } },
+        { isPublic: true }
+      ]
+    };
+
     const posts = await db.post.findMany({
       include: {
         author: true,
@@ -150,8 +260,10 @@ export const getMyPostsFeed = async (lastCursor) => {
         },
       };
     }
+
     const lastPostInResults = posts[posts.length - 1];
     const cursor = lastPostInResults?.id;
+
     const morePosts = await db.post.findMany({
       where,
       take,
@@ -160,6 +272,7 @@ export const getMyPostsFeed = async (lastCursor) => {
         id: cursor,
       },
     });
+
     return {
       data: posts,
       metaData: {

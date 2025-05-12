@@ -15,6 +15,7 @@ model Post {
     author    User      @relation(fields: [authorId], references: [id], onDelete: Cascade)
     authorId  String
     cld_id    String?
+    isPublic  Boolean   @default(true)
     createdAt DateTime  @default(now())
     likes     Like[]
     comments  Comment[]

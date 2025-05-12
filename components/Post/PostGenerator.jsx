@@ -2,7 +2,7 @@
 import React, { useRef, useState } from "react";
 import css from "@/styles/PostGenerator.module.css";
 import Box from "../Box";
-import { Avatar, Button, Flex, Image, Input, Spin, Typography } from "antd";
+import { Avatar, Button, Flex, Image, Input, Spin, Typography, Switch } from "antd";
 import Iconify from "../Iconify";
 import { createPost } from "@/actions/post";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
@@ -16,6 +16,7 @@ const PostGenerator = () => {
   const [fileType, setFileType] = useState(null); // [image, video]
   const [postText, setPostText] = useState(null);
   const queryClient = useQueryClient();
+  const [isPublic, setIsPublic] = useState(true);
   const { mutate: execute, isPending } = useMutation({
     mutationFn: (data) => createPost(data),
     onSuccess: () => {
@@ -29,6 +30,7 @@ const PostGenerator = () => {
     setSelectedFile(null);
     setFileType(null);
     setPostText("");
+    setIsPublic(true);
     toast.success("Post created successfully!");
   };
 
@@ -71,7 +73,7 @@ const PostGenerator = () => {
       return;
     }
     // don't forget to tell about the next.config.js file where we have set the limit of 5mb
-    execute({ postText, media: selectedFile });
+    execute({ postText, media: selectedFile, isPublic });
   }
 
   const { user } = useUser();
@@ -184,6 +186,18 @@ const PostGenerator = () => {
                     <Typography className="typoSubtitle2">Video</Typography>
                   </Flex>
                 </Button>
+
+                <Flex align="center" gap="8px">
+                  <Switch
+                    checked={isPublic}
+                    onChange={setIsPublic}
+                    checkedChildren="Public"
+                    unCheckedChildren="Private"
+                  />
+                  <Typography.Text type="secondary">
+                    {isPublic ? "Public" : "Private"}
+                  </Typography.Text>
+                </Flex>
 
                 <Button
                   type="primary"
