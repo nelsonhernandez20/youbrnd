@@ -25,7 +25,15 @@
 }
 
 @media (max-width: 800px) {
+    .wrapper {
+        flex-direction: column;
+    }
     .rightSide{
-        display: none;
+        display: flex;
+        max-width: 100%;
+        order: -1;
+    }
+    .postsArea {
+        max-width: 100%;
     }
 }
